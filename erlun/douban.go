@@ -3,18 +3,33 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func main() {
-	Spider()
+type MovieData struct {
+	Title string `json:"title"`
+	Director string `json:"director"`
+	Picture string `json:"picture"`
+	Actor string `json:"actor"`
+	Year string `json:"year"`
+	Score string `json:"score"`
+	Quote string `json:"quote"`
 }
 
-func Spider() {
+func main() {
+	for i := 0; i < 10; i++ {
+		fmt.Printf("正在爬取第 %d 页\n", i + 1)
+		Spider(strconv.Itoa(i * 25))
+	}
+}
+
+func Spider(page string) {
 	// 1．发送请求
 	client := http.Client{}
-	req, err := http.NewRequest("GET", "https://movie.douban.com/top250", nil)
+	req, err := http.NewRequest("GET", "https://movie.douban.com/top250?start=" + page, nil)
 	if err != nil {
 		fmt.Println("req err", err)
 	}
@@ -46,22 +61,40 @@ func Spider() {
 	// #content > div > div.article > ol > li:nth-child(1) > div > div.info > div.bd > div > span.rating_num
 	// #content > div > div.article > ol > li:nth-child(1) > div > div.info > div.bd > p.quote > span
 	docDetail.Find("#content > div > div.article > ol > li").
-	Each(func(i int, s *goquery.Selection) {
-		title := s.Find("div > div.info > div.hd > a > span:nth-child(1)").Text()
-		img := s.Find("div > div.pic > a > img")
-		imgTmp, ok := img.Attr("src")
-		info := s.Find("div > div.info > div.bd > p:nth-child(1)").Text()
-		score := s.Find("div > div.info > div.bd > div > span.rating_num").Text()
-		quote := s.Find("div > div.info > div.bd > p.quote > span").Text()
+		Each(func(i int, s *goquery.Selection) {
+			var data MovieData
+			title := s.Find("div > div.info > div.hd > a > span:nth-child(1)").Text()
+			img := s.Find("div > div.pic > a > img")
+			imgTmp, ok := img.Attr("src")
+			info := s.Find("div > div.info > div.bd > p:nth-child(1)").Text()
+			score := s.Find("div > div.info > div.bd > div > span.rating_num").Text()
+			quote := s.Find("div > div.info > div.bd > p.quote > span").Text()
 
-		if ok {
-			fmt.Println("title", title)
-			fmt.Println("imgTmp", imgTmp)
-			fmt.Println("info", info)
-			fmt.Println("score", score)
-			fmt.Println("quote", quote)
-		}
-	})
+			if ok {
+				director, actor, year := InfoSpite(info)
+				data.Title = title
+				data.Director = director
+				data.Picture = imgTmp
+				data.Actor = actor
+				data.Year = year
+				data.Score = score
+				data.Quote = quote
+				fmt.Println("data", data)
+			}
+		})
+}
 
-	// 4.保存信息
+// 4.保存信息
+func InfoSpite(info string) (director, actor, year string) {
+
+	directorRe, _ := regexp.Compile(`导演:(.*)主演:`)
+	director = string(directorRe.Find([]byte(info)))
+
+	actorRe, _ := regexp.Compile(`主演:(.*)`)
+	actor = string(actorRe.Find([]byte(info)))
+
+	yearRe, _ := regexp.Compile(`(\d+)`)
+	year = string(yearRe.Find([]byte(info)))
+
+	return
 }
