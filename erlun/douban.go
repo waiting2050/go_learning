@@ -1,13 +1,27 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 	"strconv"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+const (
+	USERNAME = "root"
+	PASSWORD = "123456"
+	HOST = "localhost"
+	PORT = "3306"
+	DBNAME = "douban_movie"
+)
+
+var DB *sql.DB
 
 type MovieData struct {
 	Title string `json:"title"`
@@ -20,6 +34,8 @@ type MovieData struct {
 }
 
 func main() {
+	InitDB()
+
 	for i := 0; i < 10; i++ {
 		fmt.Printf("正在爬取第 %d 页\n", i + 1)
 		Spider(strconv.Itoa(i * 25))
@@ -79,12 +95,33 @@ func Spider(page string) {
 				data.Year = year
 				data.Score = score
 				data.Quote = quote
-				fmt.Println("data", data)
+
+				// 4.保存信息
+				if InsertData(data) {
+					// fmt.Println("")
+				} else {
+					fmt.Println("插入失败")
+					return
+				}
+				// fmt.Println("data", data)
 			}
 		})
+		fmt.Println("插入成功")
+		return
 }
 
-// 4.保存信息
+func InitDB() {
+    path := strings.Join([]string{USERNAME, ":", PASSWORD, "@tcp(", HOST, ":", PORT, ")/", DBNAME, "?charset=utf8"}, "")
+    DB, _ = sql.Open("mysql", path)
+    DB.SetConnMaxLifetime(10 * time.Minute)
+    DB.SetMaxIdleConns(5)
+    if err := DB.Ping(); err != nil {
+        fmt.Println("open database fail")
+        return
+    }
+    fmt.Println("connect success")
+}
+
 func InfoSpite(info string) (director, actor, year string) {
 
 	directorRe, _ := regexp.Compile(`导演:(.*)主演:`)
@@ -97,4 +134,52 @@ func InfoSpite(info string) (director, actor, year string) {
 	year = string(yearRe.Find([]byte(info)))
 
 	return
+}
+
+func InsertData(movieData MovieData) bool {
+    // 开始事务
+    tx, err := DB.Begin()
+    if err != nil {
+        fmt.Println("begin transaction error:", err)
+        return false
+    }
+
+    // 准备 SQL 语句（使用预处理防止 SQL 注入）
+    stmt, err := tx.Prepare(`
+        INSERT INTO movie_data (
+            Title, Director, Picture, Actor, Year, Score, Quote
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `)
+    if err != nil {
+        fmt.Println("prepare statement error:", err)
+        tx.Rollback() // 预处理失败，回滚事务
+        return false
+    }
+    defer stmt.Close() // 延迟关闭预处理语句
+
+    // 执行插入
+    _, err = stmt.Exec(
+        movieData.Title,
+        movieData.Director,
+        movieData.Picture,
+        movieData.Actor,
+        movieData.Year,
+        movieData.Score,
+        movieData.Quote,
+    )
+    if err != nil {
+        fmt.Println("execute statement error:", err)
+        tx.Rollback() // 执行失败，回滚事务
+        return false
+    }
+
+    // 提交事务
+    err = tx.Commit()
+    if err != nil {
+        fmt.Println("commit transaction error:", err)
+        tx.Rollback() // 提交失败，尝试回滚
+        return false
+    }
+
+    return true
 }
