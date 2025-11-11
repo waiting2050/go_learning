@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"net/http"
+	"test3/controllers/default_"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,13 +9,7 @@ import (
 func DefaultRoutersInit(r *gin.Engine) {
 	defaultRouters := r.Group("/")
 	{
-		defaultRouters.GET("/", func(c *gin.Context) {
-			c.HTML(http.StatusOK, "default/index.html", gin.H{
-				"msg": "我是一个msg",
-			})
-		})
-		defaultRouters.GET("/news", func(c *gin.Context) {
-			c.String(http.StatusOK, "新闻")
-		})
+		defaultRouters.GET("/", default_.DefaultController{}.Index)
+		defaultRouters.GET("/news", default_.DefaultController{}.News)
 	}
 }

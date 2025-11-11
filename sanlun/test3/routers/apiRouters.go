@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"net/http"
+	"test3/controllers/api"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,14 +9,8 @@ import (
 func ApiRoutersInit(r *gin.Engine) {
 	apiRouters := r.Group("/api")
 	{
-		apiRouters.GET("/", func(c *gin.Context) {
-			c.String(http.StatusOK, "一个api接口")
-		})
-		apiRouters.GET("/userlist", func(c *gin.Context) {
-			c.String(http.StatusOK, "一个api接口-userlist")
-		})
-		apiRouters.GET("/plist", func(c *gin.Context) {
-			c.String(http.StatusOK, "一个api接口-plist")
-		})
+		apiRouters.GET("/", api.ApiController{}.Index)
+		apiRouters.GET("/userlist", api.ApiController{}.Userlist)
+		apiRouters.GET("/plist", api.ApiController{}.Plist)
 	}
 }
