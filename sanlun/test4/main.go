@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"gindemo06/routers"
+	"test4/routers"
 	"html/template"
 	"time"
 
@@ -20,7 +20,7 @@ func main() {
 	// 创建一个默认的路由引擎
 	r := gin.Default()
 
-	r.Use(routers.InitMiddleWare1, routers.InitMiddleWare2)
+	//r.Use(routers.InitMiddleWare1, routers.InitMiddleWare2)
 
 	//自定义模板函数  注意要把这个函数放在加载模板前
 	r.SetFuncMap(template.FuncMap{
