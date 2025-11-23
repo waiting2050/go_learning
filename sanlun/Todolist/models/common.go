@@ -8,5 +8,5 @@ type Response struct {
 
 type DataList struct {
 	Items interface{} `json:"items"`
-	Total int `json:"total"`
+	Total int64 `json:"total"`
 }

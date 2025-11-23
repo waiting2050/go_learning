@@ -53,7 +53,7 @@ func Login(c *gin.Context) {
 	if dbUser.ID == 0 {
 		c.JSON(http.StatusBadRequest, models.Response{
 			Status: http.StatusBadRequest,
-			Msg: "用户不存在",
+			Msg:    "用户不存在",
 		})
 		return
 	}
@@ -61,7 +61,7 @@ func Login(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.PasswordDigest), []byte(inputUser.PasswordDigest)); err != nil {
 		c.JSON(http.StatusBadRequest, models.Response{
 			Status: http.StatusBadRequest,
-			Msg: "密码错误",
+			Msg:    "密码错误",
 		})
 		return
 	}
@@ -69,9 +69,9 @@ func Login(c *gin.Context) {
 	token, _ := utils.GenerateToken(dbUser.ID)
 	c.JSON(http.StatusOK, models.Response{
 		Status: http.StatusOK,
-		Msg: "登录成功",
+		Msg:    "登录成功",
 		Data: gin.H{
-			"token" : token,
+			"token": token,
 		},
 	})
 }
