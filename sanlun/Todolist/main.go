@@ -11,7 +11,7 @@ func main() {
 		panic(err)
 	}
 
-	r := routers.SerupRouter()
+	r := routers.SetupRouter()
 
 	r.Run(":8080")
 }

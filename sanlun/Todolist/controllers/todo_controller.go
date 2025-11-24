@@ -10,7 +10,7 @@ import (
 )
 
 // 增
-func CreatTodo(c *gin.Context) {
+func CreateTodo(c *gin.Context) {
 	var todo models.Todo
 	c.ShouldBindBodyWithJSON(&todo)
 
@@ -164,7 +164,7 @@ func DeleteTodo(c *gin.Context) {
 
 // 删（批量）
 // type 参数说明: 1:已完成, 2:待办, 3:全部
-func DeleteAllCompleted(c *gin.Context) {
+func DeleteBatch(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	deleteType := c.Query("type")
 	query := dao.DB.Where("user_id = ?", userID)

@@ -2,11 +2,12 @@ package routers
 
 import (
 	"Todolist/controllers"
+	"Todolist/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SerupRouter() *gin.Engine {
+func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	v1 := r.Group("/api/v1")
@@ -17,9 +18,10 @@ func SerupRouter() *gin.Engine {
 
 		// 待办模块（需要登录）
 		todo := v1.Group("/todo")
+		todo.Use(middleware.JWT())
 		{
 			// 增
-			todo.POST("", controllers.CreatTodo)
+			todo.POST("", controllers.CreateTodo)
 
 			// 查
 			todo.GET("", controllers.GetTodo)
@@ -34,7 +36,7 @@ func SerupRouter() *gin.Engine {
 			todo.DELETE("/:id", controllers.DeleteTodo)
 
 			// 删（批量）
-			todo.DELETE("batch", controllers.DeleteAllCompleted)
+			todo.DELETE("batch", controllers.DeleteBatch)
 		}
 	}
 
