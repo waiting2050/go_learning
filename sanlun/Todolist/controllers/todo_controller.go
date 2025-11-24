@@ -111,14 +111,14 @@ func UpdateOneTodo(c *gin.Context) {
 }
 
 // 改（批量）
-func UpdateAllTodo(c *gin.Context) {
+func UpdateAllTodos(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
 	var form statusForm
 	if err := c.ShouldBindBodyWithJSON(&form); err != nil {
 		c.JSON(http.StatusBadRequest, models.Response{
 			Status: http.StatusBadRequest,
-			Msg: "参数错误",
+			Msg:    "参数错误",
 		})
 		return
 	}
@@ -128,14 +128,14 @@ func UpdateAllTodo(c *gin.Context) {
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: http.StatusInternalServerError,
-			Msg: "批量更新失败",
+			Msg:    "批量更新失败",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, models.Response{
 		Status: http.StatusOK,
-		Msg: "批量操作成功",
+		Msg:    "批量操作成功",
 		Data: models.DataList{
 			Items: nil,
 			Total: result.RowsAffected,
@@ -151,20 +151,48 @@ func DeleteTodo(c *gin.Context) {
 	if err := dao.DB.Where("id = ? and user_id = ?", id, userID).Delete(&models.Todo{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: http.StatusInternalServerError,
-			Msg: "删除失败",
+			Msg:    "删除失败",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, models.Response{
 		Status: http.StatusOK,
-		Msg: "删除成功",
+		Msg:    "删除成功",
 	})
 }
 
 // 删（批量）
+// type 参数说明: 1:已完成, 2:待办, 3:全部
 func DeleteAllCompleted(c *gin.Context) {
 	userID, _ := c.Get("user_id")
-	dao.DB.Where("user_id = ? AND status = ?", userID, 1).Delete(&models.Todo{})
-	c.JSON(200, models.Response{Status: 200, Msg: "已清理所有完成项"})
+	deleteType := c.Query("type")
+	query := dao.DB.Where("user_id = ?", userID)
+
+	switch deleteType {
+	case "1": // 删除所有已完成
+		query = query.Where("status = ?", 1)
+	case "2": // 删除所有待办
+		query = query.Where("status = ?", 0)
+	case "3": // 删除所有
+	default:
+		c.JSON(http.StatusBadRequest, models.Response{
+			Status: http.StatusBadRequest,
+			Msg:    "参数错误，请指定type(1:已完成 2:待办 3:全部)",
+		})
+		return
+	}
+
+	if err := query.Delete(&models.Todo{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, models.Response{
+			Status: http.StatusInternalServerError,
+			Msg:    "删除失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.Response{
+		Status: http.StatusOK,
+		Msg:    "删除成功",
+	})
 }
