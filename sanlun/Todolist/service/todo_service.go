@@ -15,7 +15,7 @@ type TodoService struct{}
 // 逻辑：写入数据库 -> 删除该用户的缓存（确保下次查是新的）
 func (s *TodoService) CreateTodo(todo *models.Todo) error {
 	if err := dao.DB.Create(todo).Error; err != nil {
-		return nil
+		return err
 	}
 
 	s.clearCache(todo.UserID)
@@ -24,7 +24,7 @@ func (s *TodoService) CreateTodo(todo *models.Todo) error {
 
 // GetTodos 获取任务列表 (带 Redis 缓存)
 // 逻辑：只缓存“第一页、无搜索关键词、无状态筛选”的热点数据，其他复杂查询直接走 DB
-func (s *TodoService) GeTodos(userID uint, pageNum, pageSize int, status, keyword string) (interface{}, int64, error) {
+func (s *TodoService) GetTodos(userID uint, pageNum, pageSize int, status, keyword string) (interface{}, int64, error) {
 	var todos []models.Todo
 	var total int64
 
@@ -34,7 +34,7 @@ func (s *TodoService) GeTodos(userID uint, pageNum, pageSize int, status, keywor
 		val, err := dao.RDB.Get(dao.Ctx, CacheKey).Result()
 		if err == nil {
 			if err := json.Unmarshal([]byte(val), &todos); err == nil {
-				return todos, int64(total), nil
+				return todos, int64(len(todos)), nil
 			}
 		}
 	}
@@ -50,7 +50,7 @@ func (s *TodoService) GeTodos(userID uint, pageNum, pageSize int, status, keywor
 	}
 
 	offset := (pageNum - 1) * pageSize
-	if err := query.Count(&total).Limit(pageSize).Offset(offset).Find(&todos).Error; err != nil {
+	if err := query.Order("priority desc").Order("created_at desc").Count(&total).Limit(pageSize).Offset(offset).Find(&todos).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -68,7 +68,7 @@ func (s *TodoService) UpdateOneTodo(id string, userID uint, status int) error {
 		return err
 	}
 
-	if err := dao.DB.Model(&todo).Update("status = ?", status).Error; err != nil {
+	if err := dao.DB.Model(&todo).Update("status", status).Error; err != nil {
 		return err
 	}
 
@@ -100,7 +100,7 @@ func (s *TodoService) DeleteBatch(userID uint, deleteType string) error {
 	case "1":
 		query = query.Where("status = ?", 1)
 	case "2":
-		query = query.Where("status = ?", 2)
+		query = query.Where("status = ?", 0)
 	case "3":
 	default:
 		return fmt.Errorf("参数错误")

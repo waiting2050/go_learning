@@ -53,7 +53,7 @@ func GetTodo(c *gin.Context) {
 	status := c.Query("status")
 	keyword := c.Query("keyword")
 
-	items, total, err := TodoService.GeTodos(uid, pageNum, pageSize, status, keyword)
+	items, total, err := TodoService.GetTodos(uid, pageNum, pageSize, status, keyword)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: 50002,
@@ -167,6 +167,7 @@ func DeleteBatch(c *gin.Context) {
 			Msg:    "参数错误或删除失败",
 			Data:   nil,
 		})
+		return
 	}
 
 	c.JSON(http.StatusOK, models.Response{
