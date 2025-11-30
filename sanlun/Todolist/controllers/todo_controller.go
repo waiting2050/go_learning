@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"Todolist/dao"
 	"Todolist/models"
 	"Todolist/service"
 	"net/http"
@@ -66,7 +65,7 @@ func GetTodo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, models.Response{
 		Status: codeSuccess,
-		Msg: "查询成功",
+		Msg:    "查询成功",
 		Data: models.DataList{
 			Items: items,
 			Total: total,
@@ -124,8 +123,8 @@ func UpdateAllTodos(c *gin.Context) {
 	if err := TodoService.UpdateAllTodos(userID.(uint), form.Status); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: 50003,
-			Msg: "批量操作失败",
-			Data: nil,
+			Msg:    "批量操作失败",
+			Data:   nil,
 		})
 		return
 	}
@@ -144,8 +143,8 @@ func DeleteTodo(c *gin.Context) {
 	if err := TodoService.DeleteTodo(id, userID.(uint)); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: 50004,
-			Msg: "删除失败",
-			Data: nil,
+			Msg:    "删除失败",
+			Data:   nil,
 		})
 		return
 	}
@@ -165,8 +164,8 @@ func DeleteBatch(c *gin.Context) {
 	if err := TodoService.DeleteBatch(userID.(uint), deleteType); err != nil {
 		c.JSON(http.StatusInternalServerError, models.Response{
 			Status: 40002,
-			Msg: "参数错误或删除失败",
-			Data: nil,
+			Msg:    "参数错误或删除失败",
+			Data:   nil,
 		})
 	}
 
