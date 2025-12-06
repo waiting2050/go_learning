@@ -1,0 +1,8 @@
+# 忽略Go编译产物
+*.exe
+*.out
+# 忽略VS Code配置
+.vscode/
+# 忽略临时文件
+tmp/
+*.log
