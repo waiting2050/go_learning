@@ -1,278 +1,232 @@
-### docker run命令中的常见参数
-- `-d`：让容器后台运行
-- `--name`：给容器命名
-- `-e`：环境变量
-- `-p`：宿主机端口映射到容器内端口
+# Docker核心概念与实战指南
+## 1. Docker基础概念
+### Docker概述
+Docker是一种成熟高效的软件部署技术，利用容器化技术为应用程序封装独立的运行环境，每个运行环境即为一个容器，承载容器运行的计算机称为宿主机。
 
+### 容器与虚拟机的区别
+- Docker容器：多个容器共享同一个系统内核。
+- 虚拟机：每个虚拟机包含一个操作系统的完整内核。
+- 优势：Docker容器比虚拟机更轻量、占用空间更小、启动速度更快。
 
-### 镜像名称结构
-格式：`Repository:TAG`
-- `Repository`：镜像名
-- `TAG`：版本号
+### 镜像（Image）
+- 定义：镜像是容器的模板，可类比为软件安装包。
+- 类比：类似于制作糕点的模具，可用于创建多个糕点（容器），并可分享给他人。
 
-# Docker 命令解读文档
-## 一、基本介绍
-### 1. 核心概念关联
-| 操作对象 | 核心命令 | 状态流转 |
-|----------|----------|----------|
-| 镜像（Image） | docker pull/push/build/save/load/rmi | 本地镜像 ↔ 镜像仓库 |
-| 容器（Container） | docker run/start/stop/kill/rm/exec | 运行中 ↔ 已停止 |
+### 容器（Container）
+- 定义：容器是基于镜像运行的应用程序实例，可类比为安装好的软件。
+- 类比：类似于模具制作出的糕点。
 
-### 2. 帮助命令
-```bash
-# 查看 Docker 版本信息
-docker version
+### Docker仓库（Registry）
+- 定义：用于存放和分享Docker镜像的场所。
+- Docker Hub：Docker的官方公共仓库，存储了大量用户分享的Docker镜像。
 
-# 查看 Docker 系统信息（如镜像数、容器数、内核版本等）
-docker info
+## 2. Docker安装
+### 运行环境
+Docker通常基于Linux容器化技术。在Windows和Mac电脑上，Docker通过虚拟化一个Linux子系统来运行。
 
-# 查看指定命令的详细用法（替换 [command] 为具体命令，如 run、pull）
-docker [command] --help
+### 推荐环境
+Linux系统宿主机是最佳的Docker实战环境。
 
-# 不输入具体命令，展示所有可用 Docker 命令
-docker --help
-```
+### Linux系统安装
+1. 访问getdocker.com获取安装脚本。
+2. 执行安装脚本（例如，通过`curl -fsL https://get.docker.com -o get-docker.sh`下载脚本，然后执行`sudo sh get-docker.sh`）。
+3. 安装完成后，若非root用户，需在所有docker命令前添加`sudo`以获取管理员权限。
 
-## 二、核心流程：下载→启动→修改→保存→分享
-### 任务目标：拉取 Nginx 镜像，修改页面并发布
+### Windows系统安装
+1. 启用Windows功能：勾选“Virtual Machine Platform”（虚拟机平台）和“适用于Linux的Windows子系统”（WSL）。
+2. 重启电脑：根据提示完成重启。
+3. 安装WSL：
+   - 以管理员身份打开命令提示符（CMD）。
+   - 执行`wsl --set-default-version 2`将WSL默认版本设为2。
+   - 执行`wsl --update`安装WSL（国内网络建议添加`--web-download`参数减少下载失败）。
+4. 下载并安装Docker Desktop：从官方网站下载对应CPU架构的安装包（Windows通常为AMD64），按提示完成安装。
+5. 启动Docker Desktop：需保持Docker Desktop软件运行。
+6. 验证安装：在Windows终端输入`docker --version`，若能打印版本号则表示安装成功。
 
-## 三、镜像操作命令
-### 1. 检索镜像（不推荐）
-- 命令：`docker search [镜像名]`（如 `docker search nginx`）
-- 问题：可能报错 `Error response from daemon: Get "https://index.docker.io/v1/search?q=xxx&n=25": dial tcp ...: connect: connection refused`
-- 推荐方式：直接访问 [Docker Hub 官网](https://hub.docker.com/) 搜索镜像（需科学上网）
+### Mac系统安装
+1. 根据Mac电脑的芯片类型（Intel或Apple Silicon）下载对应的Docker Desktop安装包。
+2. 按提示完成安装。
 
-### 2. 拉取镜像（推荐）
-- 语法：`docker pull image[:tag]`（tag 为版本号，不写默认 latest）
-- 示例：拉取 Nginx 官方镜像
-  ```bash
-  docker pull nginx
-  ```
-- 常见报错：`Error response from daemon: Get "https://registry-1.docker.io/v2/": ...`
-- 解决方案：重新配置 Docker 镜像加速器
+### 命令行使用
+尽管Docker Desktop提供可视化界面，但命令行在各操作系统上通用性更强，因此教程主要通过命令行讲解。
 
-### 3. 查看本地镜像
-- 语法：`docker images [option]`
-- 输出字段：镜像名、版本标签、镜像 ID（唯一标识）、创建时间、大小
-
-### 4. 删除镜像
-- 语法：`docker rmi [option] image:tag`（或镜像 ID）
-- 强制删除所有镜像（慎用）：
-  ```bash
-  docker rmi -f $(docker images -aq)
-  ```
-
-### 5. 镜像保存与加载
-#### （1）保存镜像为压缩包
-- 语法：`docker save [option] image[:tag] > 保存路径/文件名.tar`
+## 3. Docker镜像管理命令
+### docker pull - 下载镜像
+- 功能：从Docker仓库下载镜像到本地。
+- 镜像构成：一个完整的镜像名称包含四部分：`[registry_address/][namespace/]image_name[:tag]`
+  - `registry_address`：Docker仓库的注册表地址，`docker.io`表示Docker Hub官方仓库，可省略。
+  - `namespace`：命名空间，通常是作者或组织名称，`library`是Docker官方仓库的命名空间，可省略。
+  - `image_name`：镜像的名称。
+  - `tag`：镜像的标签名，通常表示版本号，`latest`表示最新版本，可省略。
 - 示例：
-  ```bash
-  docker save nginx:latest > ./nginx-backup.tar
-  ```
+  - `docker pull nginx`：从Docker Hub官方仓库下载最新版Nginx镜像。
+  - `docker pull n8n/n8n`：从N8n的私有仓库下载N8n镜像。
+- Docker Hub网站：`hub.docker.com`是官方仓库，可搜索、查看镜像详情（如官方镜像、版本号、使用说明）。
+- Registry（注册表）与Repository（镜像库）：
+  - Registry：整个Docker Hub网站可视为一个Registry。
+  - Repository：一个Repository（如Nginx）存储了同一个镜像的不同版本。
+- 网络问题解决方案（镜像站配置）：
+  - Linux：修改`/etc/docker/daemon.json`文件，添加`"registry-mirrors": ["https://<your mirror-address>"]`，然后重启Docker服务（`sudo systemctl restart docker`）。
+  - Windows/Mac：在Docker Desktop的设置中，进入“Docker Engine”配置项，在`registry-mirrors`中添加镜像站地址，点击“Apply & Restart”。
 
-#### （2）从压缩包加载镜像
-- 语法：`docker load [option] < 压缩包路径/文件名.tar`
-- 用途：迁移镜像到其他服务器，或本地备份恢复
+### docker images - 列出本地镜像
+- 功能：列出所有已下载到本地的Docker镜像。
 
-### 6. 镜像提交（自定义镜像）
-- 语法：`docker commit [option] 容器ID/容器名 [repository[:tag]]`
-- 作用：基于修改后的容器创建新镜像（如修改 Nginx 页面后保存为自定义镜像）
+### docker rmi - 删除镜像
+- 功能：删除本地的Docker镜像。
+- 参数：可指定镜像名称或ID。
 
-## 四、容器操作命令
-### 1. 运行容器
-- 语法：`docker run [option] image[:tag] [command] [arg...]`
-- 核心参数说明：
-  - `-d`：后台运行容器
-  - `--name`：指定容器名称（如 `--name my-nginx`）
-  - `-p`：端口映射（如 `-p 80:80`，宿主机端口:容器内端口）
-  - `-it`：交互式终端（进入容器时使用）
-- 示例：启动 Nginx 容器并映射 80 端口
-  ```bash
-  docker run -d --name my-nginx -p 80:80 nginx
-  ```
-- 注意：不写 tag 时默认使用 latest 版本；command 和 arg 为容器默认启动命令，一般无需手动指定
-- 终止运行：`ctrl + c`（仅前台运行时有效）
+### 镜像CPU架构（--platform）
+- 背景：Docker镜像作为软件，在不同的CPU架构下（如AMD64、ARM64）有不同的版本。
+- 默认行为：`docker pull`命令默认会自动选择最适合当前宿主机CPU架构的镜像。
+- 特殊情况：
+  - 对于某些低功耗迷你主机（如香橙派），其CPU架构通常为ARM64，需确认所需镜像是否提供ARM64版本。
+  - Mac电脑（ARM64架构）的Docker Desktop会使用QEMU模拟X86-64指令集，以兼容部分AMD64镜像，但可能存在兼容性或性能开销。
 
-### 2. 停止容器
-#### （1）正常停止
-- 语法：`docker stop 容器ID/容器名`
-- 示例：
-  ```bash
-  docker stop my-nginx
-  ```
+## 4. Docker容器管理命令
+### docker run - 创建并运行容器（最重要命令）
+- 功能：使用指定的镜像创建并运行一个容器。
+- 自动拉取：如果本地不存在指定镜像，`docker run`会先自动拉取镜像，再创建并运行容器。
+- 辅助查看命令：
+  - `docker ps`：查看正在运行的容器，输出信息包括：Container ID（容器唯一ID）、Image（基于哪个镜像创建）、Names（容器名称）。
+  - `docker ps -a`：查看所有容器（包括正在运行和已停止的）。
+- 常用参数：
+  - `-d`（Detached Mode）：
+    - 功能：让容器在后台执行，不阻塞当前终端窗口。
+    - 效果：控制台只打印容器ID，容器日志不会直接输出到终端。
+  - `-p`（Port Mapping/端口映射）：
+    - 背景：Docker容器运行在独立的虚拟网络环境中，默认无法直接从宿主机访问容器内部网络。
+    - 功能：将宿主机的端口映射到容器内部的端口。
+    - 语法：`-p <宿主机端口>:<容器内部端口>`（先外后内）。
+    - 示例：`-p 80:80`将宿主机的80端口转发到容器内的80端口。
+  - `-v`（Volume Mounting/挂载卷）：
+    - 功能：将宿主机的文件目录与容器内的文件目录进行绑定。
+    - 目的：实现数据的持久化保存，当容器被删除时，容器内的数据也会被删除，但挂载卷可确保数据保存在宿主机上。
+    - 类型：
+      - 绑定挂载（Bind Mount）：直接将宿主机目录路径写入命令，语法：`-v <宿主机目录路径>:<容器内部目录路径>`，注意：宿主机目录内容会覆盖容器内对应目录的原始内容。
+      - 命名卷挂载（Named Volume）：让Docker自动创建一个存储空间，并为其命名。创建命名卷：`docker volume create <卷名称>`；使用命名卷：`-v <卷名称>:<容器内部目录路径>`；特点：命名卷在第一次使用时，Docker会将容器的文件夹内容同步到命名卷进行初始化（绑定挂载无此功能）。
+    - 卷管理命令：
+      - `docker volume ls`：列出所有创建过的卷。
+      - `docker volume inspect <卷名称>`：查看卷的详细信息，包括在宿主机的真实目录。
+      - `docker volume rm <卷名称>`：删除一个卷。
+      - `docker volume prune`：删除所有未被任何容器使用的卷。
+  - `-e`（Environment Variables/环境变量）：
+    - 功能：向容器内部传递环境变量。
+    - 语法：`-e <KEY>=<VALUE>`。
+    - 用途：常用于配置数据库账号密码等。
+    - 查找：可在Docker Hub镜像文档或开源项目的GitHub仓库中查找可用的环境变量。
+  - `--name`（自定义容器名称）：
+    - 功能：为容器指定一个自定义的、在宿主机上唯一的名称。
+    - 好处：方便记忆和管理。
+  - `-it`（Interactive & TTY/交互式终端）：
+    - 功能：让控制台进入容器内部，获得一个交互式的命令行环境。
+    - 用途：临时调试容器，执行Linux命令。
+    - 语法：`docker run -it <镜像名称> /bin/bash`（或`/bin/sh`）。
+  - `--rm`（运行结束后自动删除）：
+    - 功能：当容器停止时，自动将其从宿主机上删除。
+    - 常用组合：与`-it`联用，用于临时调试场景。
+  - `--restart`（重启策略）：
+    - 功能：配置容器停止时的重启行为。
+    - 常用策略：
+      - `always`：只要容器停止（包括内部错误崩溃、宿主机断电等），就会立即重启。
+      - `unless-stopped`：除非手动停止容器，否则都会尝试重启。对于生产环境非常有用，可自动重启因意外停止的容器，而手动停止的容器不会再重启。
 
-#### （2）强制停止（适用于容器无响应）
-- 语法：`docker kill 容器ID/容器名`
-- 说明：直接发送 SIGKILL 信号，不给容器内进程清理机会，快速终止
+### 容器启停与管理
+- `docker stop <容器ID或名称>`：停止一个正在运行的容器。
+- `docker start <容器ID或名称>`：重新启动一个已停止的容器。
+  - 参数保留：使用`stop`和`start`启停容器时，之前`docker run`时设置的端口映射、挂载卷、环境变量等参数都会被Docker记录并保留，无需重新设置。
+- `docker inspect <容器ID或名称>`：查看容器的详细配置信息，输出内容复杂，可借助AI辅助分析。
+- `docker create <镜像名称>`：只创建容器，但不立即启动，若要启动，需后续执行`docker start`命令。
 
-### 3. 启动/重启容器
-#### （1）启动已停止的容器
-- 语法：`docker start 容器ID/容器名`
+### 容器内部操作与调试
+- `docker logs <容器ID或名称>`：查看容器的运行日志，`-f`参数可滚动查看日志，实时刷新。
+- Docker技术原理简述：
+  - Cgroups（Control Groups）：用于限制和隔离进程的资源使用（CPU、内存、网络带宽等），确保容器资源消耗不影响宿主机或其他容器。
+  - Namespaces：用于隔离进程的资源视图，使得容器只能看到自己内部的进程ID、网络资源和文件目录，而看不到宿主机的。
+  - 本质：Docker容器本质上是一个特殊的进程，但进入容器内部后，其表现如同一个独立的操作系统。
+- `docker exec` - 在容器内部执行命令：
+  - 功能：在一个正在运行的Docker容器内部执行Linux命令。
+  - 语法：`docker exec <容器ID或名称> <命令>`。
+  - 示例：`docker exec my_nginx ps -ef`查看容器内进程。
+  - 进入交互式环境：`docker exec -it <容器ID或名称> /bin/sh`（或`/bin/bash`）可进入容器内部获得交互式命令行环境，进行文件系统查看、进程管理或深入调试。
+  - 注意：容器内部通常是极简操作系统，可能缺失`vi`等常用工具，需要自行安装（如Debian系容器使用`apt update`和`apt install vim`）。
 
-#### （2）重启容器（运行中→重启，已停止→启动）
-- 语法：`docker restart 容器ID/容器名`
+## 5. Dockerfile - 构建镜像的蓝图
+### 定义
+Dockerfile是一个文本文件，详细列出了如何制作Docker镜像的步骤和指令，可类比为制作模具的图纸。
 
-### 4. 查看容器状态
-#### （1）查看运行中的容器
-- 语法：`docker ps [option]`
-- 输出字段：容器 ID、镜像名、默认命令、创建时间、启动状态（Up 为运行中）、占用端口、容器名
-- 关键参数：`-a` 查看所有容器（包括已停止）
+### 基本结构与指令
+- `FROM <基础镜像>`：所有Dockerfile的第一行，选择一个基础镜像，表示新镜像在此基础上构建。
+- `WORKDIR <目录路径>`：设置镜像内的工作目录，后续命令在此目录下执行。
+- `COPY <源路径> <目标路径>`：将宿主机的文件或目录拷贝到镜像内的指定路径。
+- `RUN <命令>`：在镜像构建过程中执行的命令（例如安装依赖）。
+- `EXPOSE <端口号>`：声明镜像提供服务的端口（仅为声明，非强制，实际端口映射仍由`-p`参数决定）。
+- `CMD <命令>`：容器运行时默认执行的启动命令，一个Dockerfile只能有一个CMD指令。
+- `ENTRYPOINT <命令>`：与CMD类似，但优先级更高，不易被`docker run`命令覆盖。
 
-#### （2）查看容器资源占用
-- 语法：`docker stats 容器ID/容器名`
-- 输出字段：CPU 使用率、内存占用、网络 IO、磁盘 IO 等
-- 退出查看：`ctrl + c`
+### docker build - 构建镜像
+- 功能：根据Dockerfile构建Docker镜像。
+- 语法：`docker build -t <镜像名称>:<版本号> <Dockerfile所在目录>`。
+- 示例：`docker build -t docker-test .`（在当前目录构建名为`docker-test`的镜像）。
 
-### 5. 查看容器日志
-- 语法：`docker logs [option] 容器ID/容器名`
-- 常用参数：`-f` 实时跟踪日志，`--tail 100` 查看最新 100 行
-- 说明：若容器未执行特殊操作，可能无日志输出
+### 镜像推送至Docker Hub
+1. 登录Docker Hub：`docker login`。
+2. 重新标记镜像：`docker tag <本地镜像名称> <你的用户名>/<镜像名称>[:<版本号>]`，推送时镜像名称必须包含用户名作为命名空间。
+3. 推送镜像：`docker push <你的用户名>/<镜像名称>:<版本号>`。
+4. 验证：在Docker Hub网站上可搜索到已推送的镜像，其他用户即可通过`docker pull`下载使用。
 
-### 6. 查看容器进程
-- 语法：`docker top 容器ID/容器名`
-- 作用：查看容器内运行的进程信息（类似 Linux top 命令）
+## 6. Docker网络模式
+### Bridge（桥接模式）
+- 默认模式：所有容器默认连接到此网络。
+- 内部IP：每个容器被分配一个内部IP地址（通常是172.17.x.x开头）。
+- 通信：同一Bridge网络内的容器可以通过内部IP地址互相访问，容器网络与宿主机网络默认隔离，需通过端口映射（`-p`）才能从宿主机访问。
+- 自定义子网：
+  - 创建：`docker network create <子网名称>`。
+  - 加入：`docker run --network <子网名称> ...`。
+  - 优势：
+    - 同一子网内的容器可以使用容器名称互相访问（Docker内部DNS机制）。
+    - 不同子网之间默认隔离。
 
-### 7. 进入容器
-#### （1）exec 方式（推荐）
-- 语法：`docker exec -it 容器ID/容器名 bash`
-- 说明：进入容器后会展示目录结构，支持交互操作；退出容器不影响容器运行
-- 注意：容器内默认仅包含运行必备资源，无 vi 等编辑器
+### Host（主机模式）
+- 功能：Docker容器直接共享宿主机的网络命名空间。
+- IP地址：容器直接使用宿主机的IP地址。
+- 端口：无需端口映射（`-p`），容器内的服务直接运行在宿主机的端口上，通过宿主机的IP和端口即可访问。
+- 用途：解决一些复杂的网络问题。
+- 语法：`docker run --network host ...`。
 
-#### （2）attach 方式
-- 语法：`docker attach 容器ID/容器名`
-- 说明：直接进入容器正在执行的终端，退出时可能导致容器停止
+### None（无网络模式）
+- 功能：容器不连接任何网络，完全隔离。
+- 语法：`docker run --network none ...`。
 
-### 8. 容器文件复制
-- 语法：`docker cp 容器ID/容器名:容器内文件路径 宿主机目标路径`
-- 示例：将容器内 Nginx 首页文件复制到本地
-  ```bash
-  docker cp my-nginx:/usr/share/nginx/html/index.html ./
-  ```
-- 注意：无需容器运行，只要容器未被删除即可复制
+### 网络管理命令
+- `docker network ls`：列出所有Docker网络（包括默认的bridge、host、none以及自定义子网）。
+- `docker network rm <网络名称>`：删除自定子网（默认网络不可删除）。
 
-### 9. 删除容器
-- 语法：`docker rm [option] 容器ID/容器名`
-- 限制：不能删除运行中的容器，需先停止（`docker stop`）或使用 `-f` 强制删除
-- 强制删除所有容器（慎用）：
-  ```bash
-  docker rm -f $(docker ps -aq)
-  ```
+## 7. Docker Compose - 多容器编排
+### 背景
+当一个完整的应用由多个模块（如前端、后端、数据库）组成时，若将所有模块打包成一个巨大容器，会导致故障蔓延、伸缩性差；若每个模块独立容器化，则管理多个容器（创建、网络配置）会增加复杂性。
 
-## 五、镜像分享（Docker Hub）
-### 1. 登录 Docker Hub
-- 前提：已注册 Docker Hub 账号（官网：https://hub.docker.com/，需科学上网）
-- 命令：`docker login`
-- 操作：输入 Docker Hub 用户名/邮箱和密码，登录成功后即可推送镜像
+### 解决方案
+Docker Compose是一种轻量级的容器编排技术，用于管理多个容器的创建和协同工作，通过YAML文件（通常命名为`docker-compose.yml`）定义多服务应用。
 
-### 2. 推送镜像
-- 步骤：
-  1. 给本地镜像打标签（格式：`用户名/镜像名:tag`）
-     ```bash
-     docker tag nginx:latest 你的用户名/my-nginx:v1.0
-     ```
-  2. 推送镜像到 Docker Hub
-     ```bash
-     docker push 你的用户名/my-nginx:v1.0
-     ```
+### YAML文件结构
+可视为多个`docker run`命令按照特定格式组织在一个文件中：
+- `services`：顶级元素，每个服务对应一个容器。
+  - 服务名称（如`mongodb`）：对应`docker run`中的`--name`，作为容器名的一部分。
+  - `image`：对应`docker run`中的镜像名。
+  - `environment`：对应`docker run`的`-e`参数。
+  - `volumes`：对应`docker run`的`-v`参数。
+  - `ports`：对应`docker run`的`-p`参数。
+- 网络：Docker Compose会自动为每个Compose文件创建一个默认子网，文件中定义的所有容器都会自动加入此子网，并可通过服务名称互相访问。
+- `depends_on`：定义容器的启动顺序，确保依赖服务先启动。
+- AI辅助：可借助AI工具生成等价的Docker Compose文件。
 
-## 六、注意事项
-1. 容器操作（如 start、stop、rm）的目标只能是容器 ID 或容器名，不能直接使用镜像名；容器 ID 可只输入前几位（能唯一识别即可）
-2. `docker exec` 进入容器后，修改的文件仅保存在容器内，容器删除后修改丢失，需通过 `docker commit` 保存为镜像
-3. 镜像加速器配置：可解决拉取镜像慢或报错问题，需根据操作系统配置对应加速器（如阿里云、网易云加速器）
+### Docker Compose命令
+- `docker compose up`：启动YAML文件中定义的所有服务（容器），`-d`参数可实现后台运行，会自动创建子网和容器。
+- `docker compose down`：停止并删除由Compose文件定义的所有服务和网络。
+- `docker compose stop`：仅停止服务，不删除容器。
+- `docker compose start`：启动已停止的服务。
+- `docker compose -f <文件名.yml> up`：指定非标准文件名的Compose文件进行操作。
 
-# Docker 存储和网络详解
-## 一、Docker 镜像透析（核心原理）
-### 1. 基础：UnionFS 联合文件系统
-- **定义**：分层、轻量级、高性能的文件系统，支持将多个目录挂载到同一个虚拟文件系统，是 Docker 镜像的底层基础。
-- **核心特性**：
-  - 分层叠加：多个文件系统同时加载，对外呈现为单一文件系统，包含所有底层文件和目录。
-  - 可继承性：基于基础镜像（无父镜像）构建各类应用镜像，实现分层继承。
-
-### 2. 关键机制：写时复制（Copy-on-Write）
-- **原理**：修改镜像时，不会直接改动原底层文件，而是复制目标文件到新层进行修改，原底层文件保持不变。
-- **形象类比**：如同在预言之书中间插入新页修改内容，不影响原有篇章，新页可随时添加/移除。
-
-### 3. 镜像工作核心逻辑
-| 机制         | 说明                                                                 |
-|--------------|----------------------------------------------------------------------|
-| 层叠效果     | 所有独立镜像层叠加形成统一视图，用户看到完整文件系统，实际各层相互独立。 |
-| 可复用性     | 不同镜像可共享底层基础镜像（如多个应用镜像共享 Ubuntu 基础层），减少冗余。 |
-| 高效性体现   | 轻量（仅包含必要改动）、快速构建（新增/修改层即可，无需从头构建）、资源复用。 |
-
-## 二、Docker 存储（数据持久化与文件共享）
-### 核心问题：容器内文件修改的痛点
-容器默认无 vi 等编辑器，且容器删除后内部数据/配置会丢失，需通过「目录挂载」实现数据持久化和便捷修改。
-
-### 1. 数据卷挂载（目录挂载）
-#### （1）核心概念
-- **定义**：将宿主机（本地）的文件/目录映射到容器内，实现宿主机与容器的文件联动（数据共享/持久化）。
-- **核心价值**：
-  - 数据持久化：容器删除后，数据因存储在宿主机而不丢失。
-  - 便捷修改：直接在宿主机编辑文件，修改实时同步到容器，无需进入容器操作。
-- **数据卷（Volume）**：宿主机与容器目录之间的映射桥梁（虚拟目录）。
-
-#### （2）两种挂载方式
-| 挂载类型 | 语法格式                  | 关键说明                                                                 |
-|----------|---------------------------|--------------------------------------------------------------------------|
-| 匿名挂载 | `docker run -v 数据卷名:容器目录` | 不指定宿主机目录，默认路径：`/var/lib/docker/volumes/xxxx/_data`；支持权限控制（ro 只读/ rw 读写）。 |
-| 具名挂载 | `docker run -v 宿主机目录:容器目录` | 宿主机目录必须以 `/` 开头（否则识别为数据卷）；目录与 `:` 之间无空格；宿主机不存在的目录会自动创建。 |
-
-#### （3）具名挂载实操示例（Nginx 页面修改）
-1. 基础启动（无挂载）：运行 Nginx 容器，通过宿主机 IP 可访问默认页面，但容器内无编辑器，修改困难。
-   ```bash
-   docker run -d --name nginx-test -p 80:80 nginx
-   ```
-2. 挂载启动（数据持久化）：将宿主机 `/my-nginx/html` 目录映射到容器内 Nginx 页面目录。
-   ```bash
-   docker run -d --name nginx-mount -p 80:80 -v /my-nginx/html:/usr/share/nginx/html nginx
-   ```
-3. 宿主机编辑文件：在 `/my-nginx/html` 下创建 `index.html` 并写入自定义内容（如 `<h1>Hello Docker Mount!</h1>`）。
-4. 验证效果：访问宿主机 IP，页面显示自定义内容；删除容器后重新执行挂载命令，页面配置仍保留。
-
-### 2. 制作镜像：Dockerfile
-- **镜像本质**：包含应用程序、系统函数库、运行配置等文件的打包包，构建过程即文件打包过程。
-- **核心用途**：将修改后的容器（如挂载配置后的 Nginx）固化为自定义镜像，便于复用和分发。
-- 参考：需通过 Dockerfile 指令（如 FROM、COPY、RUN 等）编写构建脚本（官方文档可查看完整指令）。
-
-## 三、Docker 网络（容器间通信）
-### 核心目标：实现一个容器内部访问另一个容器
-
-### 1. 方式 1：宿主机 IP + 外部端口
-- **原理**：利用容器映射到宿主机的外部端口，通过宿主机 IP 实现跨容器访问。
-- **工具**：`curl` 命令（命令行网络请求工具，支持 HTTP/HTTPS 协议）。
-- **实操步骤**：
-  1. 创建两个 Nginx 容器（app1、app2），分别映射外部端口 88、99。
-     ```bash
-     docker run -d --name app1 -p 88:80 nginx
-     docker run -d --name app2 -p 99:80 nginx
-     ```
-  2. 进入 app1 容器，通过宿主机 IP + app2 外部端口访问。
-     ```bash
-     docker exec -it app1 bash
-     curl http://宿主机IP:99
-     ```
-- **结果**：返回 app2 容器的 Nginx 默认页面，说明通信成功。
-
-### 2. 方式 2：容器 IP + 内部端口
-- **核心组件**：`docker0` 虚拟网络接口。
-  - Docker 默认创建的桥接网络（bridge network）组件。
-  - 功能：为每个容器分配唯一 IP 地址，实现容器间直接通信（无需经过宿主机端口映射）。
-- **实操步骤**：
-  1. 查看目标容器（如 app2）的 IP 地址。
-     ```bash
-     docker inspect app2  # 在输出中查找 "IPAddress" 字段（如 172.17.0.3）
-     ```
-  2. 进入 app1 容器，通过 app2 的容器 IP + 内部端口（Nginx 默认 80 端口）访问。
-     ```bash
-     docker exec -it app1 bash
-     curl http://172.17.0.3:80
-     ```
-- **优势**：通信更直接，无需依赖宿主机端口，性能更优。
-
-## 四、关键总结
-1. **镜像层**：基于 UnionFS 分层构建，写时复制机制保证高效复用和轻量性。
-2. **存储挂载**：具名挂载是生产环境常用方式，核心解决数据持久化和便捷修改问题。
-3. **容器通信**：
-   - 跨主机/外部访问：用「宿主机 IP + 外部端口」。
-   - 同主机容器间访问：优先用「容器 IP + 内部端口」（高效直接）。
-4. **实操核心**：Docker 存储和网络的设计目标是「解耦」—— 容器与数据解耦、容器与网络环境解耦，提升可移植性和灵活性。
+### 适用场景
+Docker Compose适合个人使用和单机运行的轻量级容器编排需求，与Kubernetes对比：Kubernetes是企业级服务器集群和大规模容器编排的解决方案，功能更为复杂。
