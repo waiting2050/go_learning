@@ -1,0 +1,121 @@
+# 绑定多因素身份认证(MFA)
+
+## OpenAPI Specification
+
+```yaml
+openapi: 3.0.1
+info:
+  title: ''
+  description: ''
+  version: 1.0.0
+paths:
+  /auth/mfa/bind:
+    post:
+      summary: 绑定多因素身份认证(MFA)
+      deprecated: false
+      description: ''
+      tags:
+        - 用户
+      parameters:
+        - name: Access-Token
+          in: header
+          description: ''
+          required: false
+          example: ''
+          schema:
+            type: string
+        - name: Refresh-Token
+          in: header
+          description: ''
+          required: false
+          example: ''
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                code:
+                  description: 校验码
+                  example: ''
+                  type: string
+                secret:
+                  description: ' 密钥'
+                  example: ''
+                  type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  base: &ref_0
+                    $ref: '#/components/schemas/%E5%93%8D%E5%BA%94%E7%8A%B6%E6%80%81'
+                x-apifox-orders:
+                  - base
+                required:
+                  - base
+                x-apifox-refs: {}
+                x-apifox-ignore-properties: []
+              example:
+                base:
+                  code: 10000
+                  msg: success
+          headers: {}
+          x-apifox-name: 成功
+        x-200:失败:
+          description: ''
+          content:
+            application/json:
+              schema:
+                title: ''
+                type: object
+                properties:
+                  base: *ref_0
+                x-apifox-orders:
+                  - base
+                required:
+                  - base
+                x-apifox-ignore-properties: []
+              example:
+                base:
+                  code: -1
+                  msg: 密码错误
+          headers: {}
+          x-apifox-name: 失败
+      security: []
+      x-apifox-folder: 用户
+      x-apifox-status: released
+      x-run-in-apifox: https://app.apifox.com/web/project/3905938/apis/api-141547523-run
+components:
+  schemas:
+    响应状态:
+      type: object
+      properties:
+        code:
+          type: integer
+        msg:
+          type: string
+      x-apifox-orders:
+        - code
+        - msg
+      required:
+        - code
+        - msg
+      x-apifox-ignore-properties: []
+      x-apifox-folder: ''
+  securitySchemes: {}
+servers:
+  - url: http://localhost:10001
+    description: 开发环境
+  - url: localhost:8888
+    description: 测试环境
+  - url: https://14efdb6874148af54dd6c98f749a9412-app.1024paas.com/douyin
+    description: 正式环境
+security: []
+
+```
