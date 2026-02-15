@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"silun/pkg/cache"
 	"silun/pkg/config"
 	"silun/pkg/database"
 	"silun/pkg/handler"
@@ -18,11 +19,16 @@ func main() {
 	}
 	defer database.Close(db)
 
+	if err := cache.InitRedis(cfg); err != nil {
+		log.Printf("Warning: Failed to initialize Redis: %v", err)
+	}
+	defer cache.CloseRedis()
+
 	h := server.Default(
-		server.WithHostPorts(":8888"),
+		server.WithHostPorts("0.0.0.0:8888"),
 	)
 
-	handler.RegisterRoutes(h, db)
+	handler.RegisterRoutes(h, db, cfg)
 
 	h.Spin()
 }

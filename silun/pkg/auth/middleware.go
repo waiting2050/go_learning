@@ -9,7 +9,7 @@ import (
 
 func AuthMiddleware() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
-		token := c.GetHeader("Access-Token")
+		token := string(c.GetHeader("Access-Token"))
 		if token == "" {
 			utils.Error(c, -1, "Unauthorized")
 			c.Abort()
@@ -26,17 +26,4 @@ func AuthMiddleware() app.HandlerFunc {
 		c.Set("user_id", userID)
 		c.Next(ctx)
 	}
-}
-
-func ParseAccessToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte("your-access-secret-key"), nil
-	}, &Claims{})
-	if err != nil {
-		return nil, err
-	}
-	if claims, ok := token.Claims.(*Claims); !ok {
-		return nil, errors.New("invalid token claims")
-	}
-	return claims, nil
 }

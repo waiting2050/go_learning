@@ -2,18 +2,13 @@ package handler
 
 import (
 	"context"
-	"mime/multipart"
-	"os"
 	"path/filepath"
-	"strings"
-	"time"
-	"silun/pkg/auth"
-	"silun/pkg/database"
 	"silun/pkg/service"
 	"silun/pkg/utils"
+	"strings"
+	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
 
 type UserHandler struct {
@@ -46,8 +41,8 @@ func (h *UserHandler) Register(ctx context.Context, c *app.RequestContext) {
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"user_id":  user.ID,
-		"username": user.Username,
+		"user_id":    user.ID,
+		"username":   user.Username,
 		"avatar_url": user.AvatarURL,
 	})
 }
@@ -76,26 +71,10 @@ func (h *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	c.SetCookie("access_token", accessToken, &app.CookieOptions{
-		MaxAge:   2 * 60 * 60,
-		Path:     "/",
-		SameSite: consts.Lax,
-		Secure:   true,
-		HttpOnly: true,
-	})
-
-	c.SetCookie("refresh_token", refreshToken, &app.CookieOptions{
-		MaxAge:   7 * 24 * 60 * 60,
-		Path:     "/",
-		SameSite: consts.Lax,
-		Secure:   true,
-		HttpOnly: true,
-	})
-
 	utils.Success(c, map[string]interface{}{
-		"user_id":    user.ID,
-		"username":    user.Username,
-		"avatar_url":  user.AvatarURL,
+		"user_id":       user.ID,
+		"username":      user.Username,
+		"avatar_url":    user.AvatarURL,
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	})
@@ -116,8 +95,8 @@ func (h *UserHandler) GetUserInfo(ctx context.Context, c *app.RequestContext) {
 
 	utils.Success(c, map[string]interface{}{
 		"user_id":    user.ID,
-		"username":    user.Username,
-		"avatar_url":  user.AvatarURL,
+		"username":   user.Username,
+		"avatar_url": user.AvatarURL,
 		"created_at": user.CreatedAt,
 		"updated_at": user.UpdatedAt,
 	})
@@ -135,7 +114,6 @@ func (h *UserHandler) UploadAvatar(ctx context.Context, c *app.RequestContext) {
 		utils.Error(c, -1, "failed to get file")
 		return
 	}
-	defer file.Close()
 
 	ext := filepath.Ext(file.Filename)
 	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
@@ -146,7 +124,7 @@ func (h *UserHandler) UploadAvatar(ctx context.Context, c *app.RequestContext) {
 	filename := userID + "_" + time.Now().Format("20060102150405") + ext
 	uploadPath := filepath.Join("uploads/avatars", filename)
 
-	if err := c.SaveUploadedFile(file.Filename, uploadPath); err != nil {
+	if err := c.SaveUploadedFile(file, uploadPath); err != nil {
 		utils.Error(c, -1, "failed to save file")
 		return
 	}
@@ -161,14 +139,4 @@ func (h *UserHandler) UploadAvatar(ctx context.Context, c *app.RequestContext) {
 	utils.Success(c, map[string]interface{}{
 		"avatar_url": avatarURL,
 	})
-}
-
-func (h *UserHandler) BindAndValidate(c *app.RequestContext, req interface{}) error {
-	contentType := c.GetHeader("Content-Type")
-	if strings.Contains(contentType, "application/json") {
-		return c.BindJSON(req)
-	} else if strings.Contains(contentType, "multipart/form-data") {
-		return c.BindForm(req)
-	}
-	return c.Bind(req)
 }
