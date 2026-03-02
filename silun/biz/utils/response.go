@@ -32,12 +32,3 @@ func Error(c *app.RequestContext, code int, msg string) {
 		},
 	})
 }
-
-func ErrorWithCode(c *app.RequestContext, code int, msg string) {
-	c.JSON(200, SuccessResponse{
-		Base: BaseResponse{
-			Code: code,
-			Msg:  msg,
-		},
-	})
-}
