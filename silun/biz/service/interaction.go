@@ -61,7 +61,7 @@ func (s *InteractionService) LikeAction(userID, videoID string, actionType int) 
 	return errors.New("invalid action type")
 }
 
-func (s *InteractionService) GetLikeList(userID string, pageNum, pageSize int) ([]map[string]interface{}, int64, error) {
+func (s *InteractionService) GetLikeList(userID string, pageNum, pageSize int) ([]model.Video, int64, error) {
 	var likes []model.Like
 	var total int64
 
@@ -91,27 +91,7 @@ func (s *InteractionService) GetLikeList(userID string, pageNum, pageSize int) (
 		}
 	}
 
-	videoMap := make(map[string]model.Video)
-	for _, video := range videos {
-		videoMap[video.ID] = video
-	}
-
-	var result []map[string]interface{}
-	for _, like := range likes {
-		if video, ok := videoMap[like.VideoID]; ok {
-			result = append(result, map[string]interface{}{
-				"like_id":    like.ID,
-				"video_id":   video.ID,
-				"title":      video.Title,
-				"video_url":  video.VideoURL,
-				"cover_url":  video.CoverURL,
-				"like_count": video.LikeCount,
-				"created_at": like.CreatedAt,
-			})
-		}
-	}
-
-	return result, total, nil
+	return videos, total, nil
 }
 
 func (s *InteractionService) PublishComment(userID, videoID, content string) (*model.Comment, error) {
@@ -142,7 +122,7 @@ func (s *InteractionService) PublishComment(userID, videoID, content string) (*m
 	return &comment, nil
 }
 
-func (s *InteractionService) GetCommentList(videoID string, pageNum, pageSize int) ([]map[string]interface{}, int64, error) {
+func (s *InteractionService) GetCommentList(videoID string, pageNum, pageSize int) ([]model.Comment, int64, error) {
 	var comments []model.Comment
 	var total int64
 
@@ -160,44 +140,7 @@ func (s *InteractionService) GetCommentList(videoID string, pageNum, pageSize in
 		return nil, 0, fmt.Errorf("failed to get comments: %w", err)
 	}
 
-	var userIDs []string
-	for _, comment := range comments {
-		userIDs = append(userIDs, comment.UserID)
-	}
-
-	var users []model.User
-	if len(userIDs) > 0 {
-		if err := s.db.Where("id IN ? AND deleted_at IS NULL", userIDs).Find(&users).Error; err != nil {
-			return nil, 0, fmt.Errorf("failed to get users: %w", err)
-		}
-	}
-
-	userMap := make(map[string]model.User)
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-
-	var result []map[string]interface{}
-	for _, comment := range comments {
-		user, ok := userMap[comment.UserID]
-		if !ok {
-			continue
-		}
-
-		result = append(result, map[string]interface{}{
-			"comment_id": comment.ID,
-			"content":    comment.Content,
-			"like_count": comment.LikeCount,
-			"created_at": comment.CreatedAt,
-			"user": map[string]interface{}{
-				"id":         user.ID,
-				"username":   user.Username,
-				"avatar_url": user.AvatarURL,
-			},
-		})
-	}
-
-	return result, total, nil
+	return comments, total, nil
 }
 
 func (s *InteractionService) DeleteComment(userID, commentID string) error {

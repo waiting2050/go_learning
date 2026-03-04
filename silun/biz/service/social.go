@@ -65,7 +65,7 @@ func (s *SocialService) FollowAction(userID, toUserID string, actionType int) er
 	return errors.New("invalid action type")
 }
 
-func (s *SocialService) GetFollowList(userID string, pageNum, pageSize int) ([]map[string]interface{}, int64, error) {
+func (s *SocialService) GetFollowList(userID string, pageNum, pageSize int) ([]model.User, int64, error) {
 	var follows []model.Follow
 	var total int64
 
@@ -95,28 +95,10 @@ func (s *SocialService) GetFollowList(userID string, pageNum, pageSize int) ([]m
 		}
 	}
 
-	userMap := make(map[string]model.User)
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-
-	var result []map[string]interface{}
-	for _, follow := range follows {
-		if user, ok := userMap[follow.FolloweeID]; ok {
-			result = append(result, map[string]interface{}{
-				"follow_id":  follow.ID,
-				"user_id":    user.ID,
-				"username":   user.Username,
-				"avatar_url": user.AvatarURL,
-				"created_at": follow.CreatedAt,
-			})
-		}
-	}
-
-	return result, total, nil
+	return users, total, nil
 }
 
-func (s *SocialService) GetFollowerList(userID string, pageNum, pageSize int) ([]map[string]interface{}, int64, error) {
+func (s *SocialService) GetFollowerList(userID string, pageNum, pageSize int) ([]model.User, int64, error) {
 	var follows []model.Follow
 	var total int64
 
@@ -146,31 +128,13 @@ func (s *SocialService) GetFollowerList(userID string, pageNum, pageSize int) ([
 		}
 	}
 
-	userMap := make(map[string]model.User)
-	for _, user := range users {
-		userMap[user.ID] = user
-	}
-
-	var result []map[string]interface{}
-	for _, follow := range follows {
-		if user, ok := userMap[follow.FollowerID]; ok {
-			result = append(result, map[string]interface{}{
-				"follow_id":  follow.ID,
-				"user_id":    user.ID,
-				"username":   user.Username,
-				"avatar_url": user.AvatarURL,
-				"created_at": follow.CreatedAt,
-			})
-		}
-	}
-
-	return result, total, nil
+	return users, total, nil
 }
 
-func (s *SocialService) GetFriendList(userID string) ([]map[string]interface{}, error) {
+func (s *SocialService) GetFriendList(userID string, pageNum, pageSize int) ([]model.User, int64, error) {
 	var following []model.Follow
 	if err := s.db.Where("follower_id = ? AND deleted_at IS NULL", userID).Find(&following).Error; err != nil {
-		return nil, fmt.Errorf("failed to get following: %w", err)
+		return nil, 0, fmt.Errorf("failed to get following: %w", err)
 	}
 
 	followingMap := make(map[string]bool)
@@ -180,7 +144,7 @@ func (s *SocialService) GetFriendList(userID string) ([]map[string]interface{}, 
 
 	var followers []model.Follow
 	if err := s.db.Where("followee_id = ? AND deleted_at IS NULL", userID).Find(&followers).Error; err != nil {
-		return nil, fmt.Errorf("failed to get followers: %w", err)
+		return nil, 0, fmt.Errorf("failed to get followers: %w", err)
 	}
 
 	var friendIDs []string
@@ -190,21 +154,21 @@ func (s *SocialService) GetFriendList(userID string) ([]map[string]interface{}, 
 		}
 	}
 
+	total := int64(len(friendIDs))
+
 	var users []model.User
 	if len(friendIDs) > 0 {
-		if err := s.db.Where("id IN ? AND deleted_at IS NULL", friendIDs).Find(&users).Error; err != nil {
-			return nil, fmt.Errorf("failed to get users: %w", err)
+		offset := (pageNum - 1) * pageSize
+		end := offset + pageSize
+		if end > len(friendIDs) {
+			end = len(friendIDs)
+		}
+		if offset < len(friendIDs) {
+			if err := s.db.Where("id IN ? AND deleted_at IS NULL", friendIDs[offset:end]).Find(&users).Error; err != nil {
+				return nil, 0, fmt.Errorf("failed to get users: %w", err)
+			}
 		}
 	}
 
-	var result []map[string]interface{}
-	for _, user := range users {
-		result = append(result, map[string]interface{}{
-			"user_id":    user.ID,
-			"username":   user.Username,
-			"avatar_url": user.AvatarURL,
-		})
-	}
-
-	return result, nil
+	return users, total, nil
 }

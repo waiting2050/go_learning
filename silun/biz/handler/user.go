@@ -41,7 +41,7 @@ func (h *UserHandler) Register(ctx context.Context, c *app.RequestContext) {
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"user_id":    user.ID,
+		"id":         user.ID,
 		"username":   user.Username,
 		"avatar_url": user.AvatarURL,
 	})
@@ -72,7 +72,7 @@ func (h *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"user_id":       user.ID,
+		"id":            user.ID,
 		"username":      user.Username,
 		"avatar_url":    user.AvatarURL,
 		"access_token":  accessToken,
@@ -94,7 +94,7 @@ func (h *UserHandler) GetUserInfo(ctx context.Context, c *app.RequestContext) {
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"user_id":    user.ID,
+		"id":         user.ID,
 		"username":   user.Username,
 		"avatar_url": user.AvatarURL,
 		"created_at": user.CreatedAt,
@@ -131,12 +131,17 @@ func (h *UserHandler) UploadAvatar(ctx context.Context, c *app.RequestContext) {
 
 	avatarURL := "/uploads/avatars/" + filename
 
-	if err := h.userService.UpdateAvatar(userID, avatarURL); err != nil {
+	user, err := h.userService.UpdateAvatar(userID, avatarURL)
+	if err != nil {
 		utils.Error(c, -1, "failed to update avatar")
 		return
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"avatar_url": avatarURL,
+		"id":         user.ID,
+		"username":   user.Username,
+		"avatar_url": user.AvatarURL,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
 	})
 }

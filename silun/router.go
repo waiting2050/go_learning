@@ -36,7 +36,7 @@ func registerRoutes(h *server.Hertz, db *gorm.DB, cfg *model.Config) {
 	user.POST("/register", userHandler.Register)
 	user.POST("/login", userHandler.Login)
 	user.GET("/info", userHandler.GetUserInfo)
-	user.POST("/avatar", auth.AuthMiddleware(), userHandler.UploadAvatar)
+	user.PUT("/avatar/upload", auth.AuthMiddleware(), userHandler.UploadAvatar)
 
 	video := h.Group("/video")
 	video.POST("/publish", auth.AuthMiddleware(), videoHandler.PublishVideo)
@@ -55,7 +55,8 @@ func registerRoutes(h *server.Hertz, db *gorm.DB, cfg *model.Config) {
 
 	relation := h.Group("/relation")
 	relation.POST("/action", auth.AuthMiddleware(), socialHandler.FollowAction)
-	relation.GET("/follow/list", socialHandler.GetFollowList)
-	relation.GET("/follower/list", socialHandler.GetFollowerList)
-	relation.GET("/friend/list", auth.AuthMiddleware(), socialHandler.GetFriendList)
+
+	h.GET("/following/list", socialHandler.GetFollowList)
+	h.GET("/follower/list", socialHandler.GetFollowerList)
+	h.GET("/friends/list", auth.AuthMiddleware(), socialHandler.GetFriendList)
 }

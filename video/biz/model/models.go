@@ -9,7 +9,7 @@ import (
 type User struct {
 	ID        string     `gorm:"primaryKey;type:varchar(255)" json:"id"`
 	Username  string     `gorm:"uniqueIndex;type:varchar(255)" json:"username"`
-	Password  string     `gorm:"type:varchar(255)" json:"-"`
+	Password  string     `gorm:"type:varchar(255)" json:"-"` // -忽略密码
 	AvatarURL string     `gorm:"type:varchar(512)" json:"avatar_url"`
 	CreatedAt time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
