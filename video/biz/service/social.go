@@ -13,7 +13,7 @@ type SocialService struct {
 	db *gorm.DB
 }
 
-func (s *SocialService) NewSocialService(db *gorm.DB) *SocialService {
+func NewSocialService(db *gorm.DB) *SocialService {
 	return &SocialService{db: db}
 }
 
@@ -32,7 +32,7 @@ func (s *SocialService) FollowAction(userID, toUserID string, actionType int) er
 
 	if actionType == 0 {
 		var existingFollow model.Follow
-		err := s.db.Where("follow_id = ? AND followed_id = ? AND deleted_at IS NULL", userID, toUserID).First(&existingFollow).Error
+		err := s.db.Where("follower_id = ? AND followee_id = ? AND deleted_at IS NULL", userID, toUserID).First(&existingFollow).Error
 
 		if err == nil {
 			return errors.New("already following this user")

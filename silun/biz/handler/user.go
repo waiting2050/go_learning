@@ -115,7 +115,7 @@ func (h *UserHandler) UploadAvatar(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	ext := filepath.Ext(file.Filename)
+	ext := strings.ToLower(filepath.Ext(file.Filename))
 	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" {
 		utils.Error(c, -1, "invalid file format")
 		return

@@ -76,9 +76,15 @@ func (s *UserService) GetUserInfo(userID string) (*model.User, error) {
 	return &user, nil
 }
 
-func (s *UserService) UpdateAvatar(userID, avatarURL string) error {
+func (s *UserService) UpdateAvatar(userID, avatarURL string) (*model.User, error) {
 	if err := s.db.Model(&model.User{}).Where("id = ?", userID).Update("avatar_url", avatarURL).Error; err != nil {
-		return fmt.Errorf("failed to update avatar: %w", err)
+		return nil, fmt.Errorf("failed to update avatar: %w", err)
 	}
-	return nil
+
+	var user model.User
+	if err := s.db.Where("id = ?", userID).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

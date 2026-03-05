@@ -49,7 +49,7 @@ func (s *VideoService) GetPublishList(userID string, pageNum, pageSize int) ([]m
 	}
 
 	if err := s.db.Where("user_id = ?", userID).
-		Order("created_at").
+		Order("created_at DESC").
 		Offset(offset).
 		Limit(pageSize).
 		Find(&videos).Error; err != nil {
