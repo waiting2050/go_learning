@@ -72,12 +72,15 @@ func (h *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
+	c.Header("Access-Token", accessToken)
+	c.Header("Refresh-Token", refreshToken)
+
 	utils.Success(c, map[string]interface{}{
-		"id":            user.ID,
-		"username":      user.Username,
-		"avatar_url":    user.AvatarURL,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"id":         user.ID,
+		"username":   user.Username,
+		"avatar_url": user.AvatarURL,
+		"created_at": user.CreatedAt,
+		"updated_at": user.UpdatedAt,
 	})
 }
 

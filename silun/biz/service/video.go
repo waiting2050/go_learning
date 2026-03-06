@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"silun/biz/cache"
 	"silun/biz/model"
@@ -83,11 +84,13 @@ func (s *VideoService) SearchVideo(keywords, username string, fromDate, toDate i
 	}
 
 	if fromDate > 0 {
-		query = query.Where("created_at >= ?", fromDate)
+		fromTime := time.Unix(fromDate/1000, (fromDate%1000)*1e6)
+		query = query.Where("created_at >= ?", fromTime)
 	}
 
 	if toDate > 0 {
-		query = query.Where("created_at <= ?", toDate)
+		toTime := time.Unix(toDate/1000, (toDate%1000)*1e6)
+		query = query.Where("created_at <= ?", toTime)
 	}
 
 	if err := query.Count(&total).Error; err != nil {

@@ -2,10 +2,10 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"silun/biz/service"
 	"silun/biz/utils"
+	"strconv"
 	"strings"
 	"time"
 
@@ -73,18 +73,17 @@ func (h *VideoHandler) GetPublishList(ctx context.Context, c *app.RequestContext
 		return
 	}
 
-	pageNum := c.DefaultQuery("page_num", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	var pageNumInt, pageSizeInt int
-	if _, err := fmt.Sscanf(pageNum, "%d", &pageNumInt); err != nil {
-		pageNumInt = 1
-	}
-	if _, err := fmt.Sscanf(pageSize, "%d", &pageSizeInt); err != nil {
-		pageSizeInt = 10
+	pageNum, err := strconv.Atoi(c.DefaultQuery("page_num", "1"))
+	if err != nil || pageNum < 1 {
+		pageNum = 1
 	}
 
-	videos, total, err := h.videoService.GetPublishList(userID, pageNumInt, pageSizeInt)
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	videos, total, err := h.videoService.GetPublishList(userID, pageNum, pageSize)
 	if err != nil {
 		utils.Error(c, -1, "failed to get video list")
 		return
@@ -125,30 +124,29 @@ func (h *VideoHandler) SearchVideo(ctx context.Context, c *app.RequestContext) {
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"video_list": videos,
-		"total":      total,
+		"items": videos,
+		"total": total,
 	})
 }
 
 func (h *VideoHandler) GetPopularVideos(ctx context.Context, c *app.RequestContext) {
-	pageNum := c.DefaultQuery("page_num", "1")
-	pageSize := c.DefaultQuery("page_size", "10")
-
-	var pageNumInt, pageSizeInt int
-	if _, err := fmt.Sscanf(pageNum, "%d", &pageNumInt); err != nil {
-		pageNumInt = 1
-	}
-	if _, err := fmt.Sscanf(pageSize, "%d", &pageSizeInt); err != nil {
-		pageSizeInt = 10
+	pageNum, err := strconv.Atoi(c.DefaultQuery("page_num", "1"))
+	if err != nil || pageNum < 1 {
+		pageNum = 1
 	}
 
-	videos, err := h.videoService.GetPopularVideos(pageNumInt, pageSizeInt)
+	pageSize, err := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	if err != nil || pageSize < 1 {
+		pageSize = 10
+	}
+
+	videos, err := h.videoService.GetPopularVideos(pageNum, pageSize)
 	if err != nil {
 		utils.Error(c, -1, "failed to get popular videos")
 		return
 	}
 
 	utils.Success(c, map[string]interface{}{
-		"video_list": videos,
+		"items": videos,
 	})
 }

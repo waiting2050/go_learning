@@ -3,12 +3,35 @@
 package main
 
 import (
+	"log"
+	"video/biz/auth"
+	"video/biz/cache"
+	"video/biz/model"
+
 	"github.com/cloudwego/hertz/pkg/app/server"
 )
 
 func main() {
-	h := server.Default()
+	cfg := model.LoadConfig()
+
+	db, err := model.InitDB(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer model.CloseDB(db)
+
+	if err := cache.InitRedis(cfg); err != nil {
+		log.Printf("Warning: Failed to initialize Redis: %v", err)
+	}
+	defer cache.CloseRedis()
+
+	auth.InitJWT(cfg)
+
+	h := server.Default(
+        server.WithHostPorts(":"+cfg.Server.Port),
+    )
 
 	register(h)
+
 	h.Spin()
 }
