@@ -206,11 +206,20 @@ func (s *InteractionService) PublishComment(userID, videoID, content string) (*m
 		ParentID: "",
 	}
 
-	if err := s.db.Create(&comment).Error; err != nil {
-		return nil, fmt.Errorf("failed to create comment: %w", err)
-	}
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
-	if err := s.db.Model(&model.Video{}).Where("id = ?", videoID).UpdateColumn("comment_count", gorm.Expr("comment_count + 1")).Error; err != nil {
+	if err := tx.Create(&comment).Error; err != nil {
+        tx.Rollback()
+        return nil, fmt.Errorf("failed to create comment: %w", err)
+    }
+
+	if err := tx.Model(&model.Video{}).Where("id = ?", videoID).UpdateColumn("comment_count", gorm.Expr("comment_count + 1")).Error; err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to update video comment count: %w", err)
 	}
 

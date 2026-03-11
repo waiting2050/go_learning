@@ -25,6 +25,14 @@ func registerRoutes(h *server.Hertz, db *gorm.DB, cfg *model.Config) {
 	socialService := service.NewSocialService(db)
 	socialHandler := handler.NewSocialHandler(socialService)
 
+	// 分片上传服务
+	uploadService := service.NewUploadService(db)
+	uploadHandler := handler.NewUploadHandler(uploadService, videoService)
+
+	// 上传策略服务
+	strategyService := service.NewUploadStrategyService(nil)
+	strategyHandler := handler.NewUploadStrategyHandler(strategyService)
+
 	public := h.Group("/")
 	public.GET("/ping", func(ctx context.Context, c *app.RequestContext) {
 		c.JSON(200, map[string]interface{}{
@@ -43,6 +51,19 @@ func registerRoutes(h *server.Hertz, db *gorm.DB, cfg *model.Config) {
 	video.GET("/publish/list", videoHandler.GetPublishList)
 	video.POST("/search", videoHandler.SearchVideo)
 	video.GET("/popular", videoHandler.GetPopularVideos)
+
+	// 上传策略接口（公开，用于前端决策）
+	strategy := h.Group("/upload/strategy")
+	strategy.GET("/decide", strategyHandler.GetUploadStrategy)
+	strategy.GET("/recommendation", strategyHandler.GetUploadRecommendation)
+
+	// 分片上传接口
+	upload := h.Group("/upload")
+	upload.POST("/init", auth.AuthMiddleware(), uploadHandler.InitUpload)
+	upload.POST("/chunk", auth.AuthMiddleware(), uploadHandler.UploadChunk)
+	upload.GET("/status", auth.AuthMiddleware(), uploadHandler.GetUploadStatus)
+	upload.POST("/merge", auth.AuthMiddleware(), uploadHandler.MergeChunks)
+	upload.POST("/cancel", auth.AuthMiddleware(), uploadHandler.CancelUpload)
 
 	like := h.Group("/like")
 	like.POST("/action", auth.AuthMiddleware(), interactionHandler.LikeAction)

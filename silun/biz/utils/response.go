@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"strconv"
+
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
@@ -31,4 +33,9 @@ func Error(c *app.RequestContext, code int, msg string) {
 			Msg:  msg,
 		},
 	})
+}
+
+// ParseInt64 解析字符串为 int64
+func ParseInt64(s string) (int64, error) {
+	return strconv.ParseInt(s, 10, 64)
 }

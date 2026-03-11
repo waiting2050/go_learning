@@ -53,6 +53,10 @@ func GetPopularVideosFromCache(pageNum, pageSize int) ([]model.Video, error) {
 }
 
 func SetPopularVideosCache(videos []model.Video, pageNum, pageSize int) error {
+	if RedisClient == nil {
+		return ErrRedisDown
+	}
+
 	ctx := context.Background()
 	key := fmt.Sprintf("popular_videos:%d:%d", pageNum, pageSize)
 
@@ -65,12 +69,12 @@ func SetPopularVideosCache(videos []model.Video, pageNum, pageSize int) error {
 }
 
 const (
-	VideoLikeCountPrefix  = "video:like:count:"
-	UserLikeStatusPrefix  = "user:like:status:"
-	UserLikeZSetPrefix    = "user:like:zset:"
-	LikeCountCacheTTL     = 30 * time.Minute
-	LikeStatusCacheTTL    = 24 * time.Hour
-	LikeZSetCacheTTL      = 24 * time.Hour
+	VideoLikeCountPrefix = "video:like:count:"
+	UserLikeStatusPrefix = "user:like:status:"
+	UserLikeZSetPrefix   = "user:like:zset:"
+	LikeCountCacheTTL    = 30 * time.Minute
+	LikeStatusCacheTTL   = 24 * time.Hour
+	LikeZSetCacheTTL     = 24 * time.Hour
 )
 
 func IsUserLikedVideo(userID, videoID string) (bool, error) {
